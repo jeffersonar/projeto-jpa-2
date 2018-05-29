@@ -2,6 +2,10 @@ package br.com.caelum;
 
 import java.util.List;
 
+import javax.persistence.EntityManagerFactory;
+
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -10,9 +14,11 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.format.FormatterRegistry;
+import org.springframework.orm.jpa.support.OpenEntityManagerInViewInterceptor;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
@@ -38,12 +44,27 @@ public class Configurador extends WebMvcConfigurerAdapter {
 	}
 	
 	@Bean
+	public Statistics statistics(EntityManagerFactory emf) { 
+	    return emf.unwrap(SessionFactory.class).getStatistics();
+	}
+	
+	@Bean
 	public List<Categoria> categorias(CategoriaDao categoriaDao) { 
 		List<Categoria> categorias = categoriaDao.getCategorias();
 		
 		return categorias;
 	}
 	
+	@Bean
+	public OpenEntityManagerInViewInterceptor getOpenEntityManagerInViewInterceptor() {
+		return new OpenEntityManagerInViewInterceptor();
+	}
+	
+	@Override
+	public void addInterceptors(InterceptorRegistry registry) {
+		registry.addWebRequestInterceptor(this.getOpenEntityManagerInViewInterceptor());
+	}
+
 	@Bean
 	public List<Loja> lojas(LojaDao lojaDao) { 
 		List<Loja> lojas = lojaDao.getLojas();
